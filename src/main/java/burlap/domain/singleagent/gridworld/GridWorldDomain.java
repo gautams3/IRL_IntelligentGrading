@@ -179,6 +179,11 @@ public class GridWorldDomain implements DomainGenerator {
 
 	protected RewardFunction rf;
 	protected TerminalFunction tf;
+
+	public GridWorldDomain ()
+	{
+
+	}
 	
 	
 	/**
