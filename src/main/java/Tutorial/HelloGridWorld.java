@@ -35,16 +35,17 @@ import java.util.List;
 public class HelloGridWorld {
 
     public Visualizer visualizer;
-    public ParkingLotDomain gridWorld;
+    public XYThetaDomain gridWorld;
     public OOSADomain domain;
     public GridLocation goal;
 
     public HelloGridWorld()
     {
-        gridWorld = new ParkingLotDomain(11,11); //11x11 grid world
-
+//        gridWorld = new XYThetaDomain(11,11); //11x11 grid world
 //        gridWorld.setMapToFourRooms(); //four rooms layout
 //        gridWorld.setProbSucceedTransitionDynamics(0.8); //stochastic transitions, if needed
+
+        gridWorld = new XYThetaDomain(5,5); //5x5 grid world
         gridWorld.setMapToParkingLot();
 
         domain = gridWorld.generateDomain(); //generate the grid world domain
@@ -52,7 +53,7 @@ public class HelloGridWorld {
         goal = new GridLocation(10, 0, 2, "GOAL");
 
         //create visualizer and explorer
-        visualizer = GridWorldVisualizer.getVisualizer(gridWorld.getMap());
+        visualizer = XYThetaWorldVisualizer.getVisualizer(gridWorld.getMap());
 
     }
 
@@ -75,8 +76,6 @@ public class HelloGridWorld {
      * If you reset the environment before you type that,
      * the episode will be discarded. To temporarily view the episodes you've created, in the shell type "episode -v". To actually record your
      * episodes to file, type "rec -w path/to/save/directory base_file_name" For example "rec -w irl_demos demo"
-     * A recommendation for examples is to record two demonstrations that both go to the pink cell while avoiding blue ones
-     * and do so from two different start locations on the left (if you keep resetting the environment, it will change where the agent starts).
      */
     public void launchExplorer(){
         State init_state = basicState();
@@ -84,10 +83,18 @@ public class HelloGridWorld {
         VisualExplorer exp = new VisualExplorer(domain, visualizer, init_state);
 
         //set control keys to use w-s-a-d
-        exp.addKeyAction("w", GridWorldDomain.ACTION_NORTH, "");
-        exp.addKeyAction("s", GridWorldDomain.ACTION_SOUTH, "");
-        exp.addKeyAction("a", GridWorldDomain.ACTION_WEST, "");
-        exp.addKeyAction("d", GridWorldDomain.ACTION_EAST, "");
+//        exp.addKeyAction("w", GridWorldDomain.ACTION_NORTH, "");
+//        exp.addKeyAction("s", GridWorldDomain.ACTION_SOUTH, "");
+//        exp.addKeyAction("a", GridWorldDomain.ACTION_WEST, "");
+//        exp.addKeyAction("d", GridWorldDomain.ACTION_EAST, "");
+
+        //set controls to 6 actions (w,s,q,e,z,x). a,d not allowed
+        exp.addKeyAction("w", XYThetaDomain.ACTION_F, "");
+        exp.addKeyAction("s", XYThetaDomain.ACTION_R, "");
+        exp.addKeyAction("q", XYThetaDomain.ACTION_FL, "");
+        exp.addKeyAction("e", XYThetaDomain.ACTION_FR, "");
+        exp.addKeyAction("z", XYThetaDomain.ACTION_RL, "");
+        exp.addKeyAction("x", XYThetaDomain.ACTION_RR, "");
 
         exp.initGUI();
     }
@@ -159,25 +166,22 @@ public class HelloGridWorld {
      */
     protected State basicState()
     {
+        GridLocation loc0 = new GridLocation(1, 3, 1, "loc0");
+        GridLocation loc1 = new GridLocation(2, 3, 1, "loc1");
         goal = new GridLocation(3, 3, 2, "GOAL");
-        GridWorldState parking_init_state = new GridWorldState(
-                new GridAgent(0, 2),
-                new GridLocation(1, 3, 1, "loc0"),
-                new GridLocation(2, 3, 1, "loc1"),
-                goal,
+        GridLocation loc3 = new GridLocation(1, 2, 0, "loc3");
+        GridLocation loc4 = new GridLocation(2, 2, 0, "loc4");
+        GridLocation loc5 = new GridLocation(3, 2, 0, "loc5");
+        GridLocation loc6 = new GridLocation(1, 0, 0, "loc6");
+        GridLocation loc7 = new GridLocation(2, 0, 0, "loc7");
+        GridLocation loc8 = new GridLocation(3, 0, 0, "loc8");
 
-                new GridLocation(1, 2, 0, "loc3"),
-                new GridLocation(2, 2, 0, "loc4"),
-                new GridLocation(3, 2, 0, "loc5"),
+        GridWorldState parking_init_state = new XYThetaState(
+                new XYThetaAgent(0, 2, 1), loc0, loc1, goal, loc3, loc4, loc5, loc6, loc7, loc8);
 
-                new GridLocation(1, 0, 0, "loc6"),
-                new GridLocation(2, 0, 0, "loc7"),
-                new GridLocation(3, 0, 0, "loc8")
-        );
-
-//        GridLocation avoid1 = new GridLocation(5, 0, 0, "wall1");
-//        GridLocation avoid2 = new GridLocation(5, 2, 0, "wall2");
-//        State parking_init_state = new GridWorldState(new GridAgent(0, 0), goal, avoid1, avoid2);
+        //Use the GridWorldState below to use the standard grid world representation
+//        GridWorldState parking_init_state = new GridWorldState(
+//                new GridAgent(0, 2), loc0, loc1, goal, loc3, loc4, loc5, loc6, loc7, loc8);
 
         return parking_init_state;
     }

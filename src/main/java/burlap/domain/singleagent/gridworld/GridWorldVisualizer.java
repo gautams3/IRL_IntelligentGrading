@@ -1,5 +1,7 @@
 package burlap.domain.singleagent.gridworld;
 
+import Tutorial.XYThetaDomain;
+import Tutorial.XYThetaState;
 import burlap.mdp.core.Domain;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.oo.state.ObjectInstance;
@@ -7,6 +9,7 @@ import burlap.mdp.core.state.State;
 import burlap.visualizer.*;
 
 import java.awt.*;
+import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -23,7 +26,7 @@ import static burlap.domain.singleagent.gridworld.GridWorldDomain.*;
  */
 public class GridWorldVisualizer {
     
-    private GridWorldVisualizer() {
+    public GridWorldVisualizer() {
         // do nothing
     }
 
@@ -240,14 +243,22 @@ public class GridWorldVisualizer {
 
 			float rx = (Integer)ob.get(VAR_X)*width;
 			float ry = cHeight - height - (Integer)ob.get(VAR_Y)*height;
-			
+			float rtheta = 90;
+			if (XYThetaState.class.isInstance(s))
+			{
+				rtheta = Integer.parseInt(ob.get(XYThetaDomain.VAR_THETA).toString()) * 90;
+			}
+
 			if(this.shape == 0){
 				g2.fill(new Rectangle2D.Float(rx, ry, width, height));
+			}
+			else if (this.shape == 2){
+				g2.fill(new Arc2D.Float(rx, ry, width, height, rtheta-225f, 90, Arc2D.PIE));
 			}
 			else{
 				g2.fill(new Ellipse2D.Float(rx, ry, width, height));
 			}
-			
+
 		}
 		
 		

@@ -1,5 +1,6 @@
 package burlap.domain.singleagent.gridworld;
 
+import Tutorial.XYThetaDomain;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI;
 import burlap.behavior.valuefunction.ValueFunction;
@@ -614,7 +615,7 @@ public class GridWorldDomain implements DomainGenerator {
 		/**
 		 * The map of the world
 		 */
-		int [][] map;
+		protected int [][] map;
 
 
 		/**
@@ -630,6 +631,7 @@ public class GridWorldDomain implements DomainGenerator {
 
 		protected Random rand = RandomFactory.getMapped(0);
 
+		public GridWorldModel() { }
 
 		public GridWorldModel(int[][] map, double[][] transitionDynamics) {
 			this.map = map;
@@ -729,17 +731,23 @@ public class GridWorldDomain implements DomainGenerator {
 
 
 		protected int actionInd(String name){
-			if(name.equals(ACTION_NORTH)){
+			if(name.equals(ACTION_NORTH) || name.equals(XYThetaDomain.ACTION_F)){
 				return 0;
 			}
-			else if(name.equals(ACTION_SOUTH)){
+			else if(name.equals(ACTION_SOUTH) || name.equals(XYThetaDomain.ACTION_R)){
 				return 1;
 			}
-			else if(name.equals(ACTION_EAST)){
+			else if(name.equals(ACTION_EAST) || name.equals(XYThetaDomain.ACTION_FL)){
 				return 2;
 			}
-			else if(name.equals(ACTION_WEST)){
+			else if(name.equals(ACTION_WEST) || name.equals(XYThetaDomain.ACTION_FR)){
 				return 3;
+			}
+			else if(name.equals(XYThetaDomain.ACTION_RL)){
+				return 4;
+			}
+			else if(name.equals(XYThetaDomain.ACTION_RR)){
+				return 5;
 			}
 			throw new RuntimeException("Unknown action " + name);
 		}
