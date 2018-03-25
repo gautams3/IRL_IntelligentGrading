@@ -46,6 +46,25 @@ public class GridWorldState implements MutableOOState {
 		this.locations = locations;
 	}
 
+	public static String getCardinalDirection (GridWorldState s)
+	{
+		int theta = Integer.parseInt(s.get("agent:theta").toString()) % 4;
+		String direction;
+		switch (theta){
+			case 0:
+				direction = "E"; break;
+			case 1:
+				direction = "N"; break;
+			case 2:
+				direction = "W"; break;
+			case 3:
+				direction = "S"; break;
+			default:
+				direction = "?"; break;
+		}
+		return direction;
+	}
+
 	@Override
 	public MutableOOState addObject(ObjectInstance o) {
 		if(!(o instanceof GridLocation)){

@@ -6,6 +6,10 @@ import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.LandmarkColorBlendInterpolation;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyphPainter2D;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.StateValuePainter2D;
 import burlap.behavior.singleagent.learnfromdemo.RewardValueProjection;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.MLIRL;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.MLIRLRequest;
@@ -17,13 +21,19 @@ import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.GroundedProp;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
+import burlap.mdp.core.oo.state.OOVariableKey;
 import burlap.mdp.core.state.State;
+import burlap.mdp.core.state.vardomain.VariableDomain;
 import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.shell.visual.VisualExplorer;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
 import burlap.visualizer.Visualizer;
 
+import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.List;
+
+import static Tutorial.GridWorldDomain.*;
 
 
 public class HelloGridWorld {
@@ -55,8 +65,8 @@ public class HelloGridWorld {
         HelloGridWorld myGridWorld = new HelloGridWorld();
 
         myGridWorld.launchExplorer();
-//        myGridWorld.launchSavedEpisodeSequenceVis("irl_demos");
-//        myGridWorld.runIRL("irl_demos");
+//        myGridWorld.launchSavedEpisodeSequenceVis("user_tries");
+//        myGridWorld.runIRL("irl_demos", "user_tries");
 
     }
 
@@ -182,8 +192,9 @@ public class HelloGridWorld {
     /**
      * Runs MLIRL on the trajectories stored in the pathToEpisodes directory and then visualizes the learned reward function.
      */
-    public void runIRL(String pathToEpisodes)
+    public void runIRL(String pathToEpisodes, String pathToUserTries)
     {
+        /** SETUP AND RUN IRL */
         //create reward function features to use
         LocationFeatures features = new LocationFeatures(this.domain, 5);
 
@@ -210,22 +221,59 @@ public class HelloGridWorld {
         request.setBoltzmannBeta(beta);
 
         //run MLIRL on it
-        MLIRL irl = new MLIRL(request, 0.1, 0.1, 10);
+        MLIRL irl = new MLIRL(request, 0.1, 0.1, 10); /// TODO: 25/03/2018 set small negative reward for road here somewhere
         irl.performIRL();
 
         //get all states in the domain so we can visualize the learned reward function for them
         List<State> allStates = StateReachability.getReachableStates(basicState(), this.domain, new SimpleHashableStateFactory());
 
+        /**
+         * SCORING CODE
+         * */
+        /// TODO: 25/03/2018 Store the reward function to a file (using YAML?)
+        /// TODO: 25/03/2018 Move to other function that reads reward function from file, user tries from file, and gives you a score
+        System.out.println("\n\nNow applying learned policy by agent to test paths tried by users from folder " + pathToUserTries);
+
+        double reward, totalReward;
+        DecimalFormat df = new DecimalFormat("#0.000");
+        if (pathToUserTries != null) {
+            List<Episode> userTries = Episode.readEpisodes(pathToUserTries);
+            for (Episode ep : userTries) {
+                totalReward = 0; //reset
+                for (State s : ep.stateSequence) {
+                    reward = rf.reward(null, null, s);
+                    totalReward += reward; /// TODO: 25/03/2018 Use gamma here
+                    System.out.println(s.get("agent:x") +", "+ s.get("agent:y")+", "+ GridWorldState.getCardinalDirection((GridWorldState)s) +": "+ "\t" + df.format(reward));
+                }
+                System.out.println("Score for this try: " + df.format(totalReward));
+            }
+        }
+
+        /** VISUALIZE */
         //get a standard grid world value function visualizer, but give it StateRewardFunctionValue which returns the
         //reward value received upon reaching each state which will thereby let us render the reward function that is
         //learned rather than the value function for it.
-        ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(
-                allStates,
-                GRID_MAX_X,
-                GRID_MAX_Y,
-                new RewardValueProjection(rf),
-                new GreedyQPolicy((QProvider) request.getPlanner())
-        );
+
+        StateValuePainter2D svp = new StateValuePainter2D();
+        OOVariableKey xVar = new OOVariableKey(CLASS_AGENT, VAR_X);
+        OOVariableKey yVar = new OOVariableKey(CLASS_AGENT, VAR_Y);
+        VariableDomain xRange = new VariableDomain(0, GRID_MAX_X);
+        VariableDomain yRange = new VariableDomain(0, GRID_MAX_Y);
+        svp.setXYKeys(xVar, yVar, xRange, yRange, 1, 1);
+        svp.setValueStringRenderingFormat(18, Color.RED, 2, 0.4f , 0.5f);
+        LandmarkColorBlendInterpolation rb = new LandmarkColorBlendInterpolation();
+        rb.addNextLandMark(0., Color.BLACK);
+        rb.addNextLandMark(1., Color.WHITE);
+        svp.setColorBlend(rb);
+
+        ValueFunctionVisualizerGUI gui = new ValueFunctionVisualizerGUI(allStates, svp, new RewardValueProjection(rf));
+
+        PolicyGlyphPainter2D spp = ArrowActionGlyph.getNSEWPolicyGlyphPainter(xVar, yVar, xRange, yRange, 1, 1,
+                ACTION_F, ACTION_R, ACTION_FR, ACTION_FR);
+
+        gui.setSpp(spp);
+        gui.setPolicy(new GreedyQPolicy((QProvider) request.getPlanner()));
+        gui.setBgColor(Color.GRAY);
 
         gui.initGUI();
     }

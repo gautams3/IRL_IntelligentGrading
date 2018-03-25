@@ -515,21 +515,9 @@ public class VisualExplorer extends JFrame implements ShellObserver{
 
 		if (GridWorldState.class.isInstance(s))
 		{
-			int theta = Integer.parseInt(s.get("agent:theta").toString()) % 4;
-			String direction = "?";
-			switch (theta){
-				case 0:
-					direction = "E"; break;
-				case 1:
-					direction = "N"; break;
-				case 2:
-					direction = "W"; break;
-				case 3:
-					direction = "S"; break;
-				default:
-					direction = "Dirn?"; break;
-			}
-			buf.append("Agent (" +s.get("agent:x")+ ", " +s.get("agent:y")+ ", " +direction+ ")").append("\n");
+			String direction = GridWorldState.getCardinalDirection((GridWorldState)s);
+			String agentState = "Agent (" +s.get("agent:x")+ ", " +s.get("agent:y")+ ", " +direction+ ")\n";
+			buf.append(agentState);
 		}
 		propViewer.setText(buf.toString());
 		
