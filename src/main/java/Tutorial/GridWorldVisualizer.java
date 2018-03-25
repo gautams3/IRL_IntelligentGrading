@@ -1,4 +1,4 @@
-package burlap.domain.singleagent.gridworld;
+package Tutorial;
 
 import burlap.mdp.core.Domain;
 import burlap.mdp.core.oo.state.OOState;
@@ -7,12 +7,13 @@ import burlap.mdp.core.state.State;
 import burlap.visualizer.*;
 
 import java.awt.*;
+import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import static burlap.domain.singleagent.gridworld.GridWorldDomain.*;
+import static Tutorial.GridWorldDomain.*;
 
 
 /**
@@ -23,7 +24,7 @@ import static burlap.domain.singleagent.gridworld.GridWorldDomain.*;
  */
 public class GridWorldVisualizer {
     
-    private GridWorldVisualizer() {
+    public GridWorldVisualizer() {
         // do nothing
     }
 
@@ -72,27 +73,27 @@ public class GridWorldVisualizer {
 		
 		r.addStatePainter(new MapPainter(map));
 		OOStatePainter oopainter = new OOStatePainter();
-		oopainter.addObjectClassPainter(GridWorldDomain.CLASS_LOCATION, new LocationPainter(map));
-		oopainter.addObjectClassPainter(GridWorldDomain.CLASS_AGENT, new CellPainter(1, Color.gray, map));
+		oopainter.addObjectClassPainter(burlap.domain.singleagent.gridworld.GridWorldDomain.CLASS_LOCATION, new LocationPainter(map));
+		oopainter.addObjectClassPainter(burlap.domain.singleagent.gridworld.GridWorldDomain.CLASS_AGENT, new CellPainter(2, Color.gray, map));
 		r.addStatePainter(oopainter);
-		
+
 		return r;
-		
+
 	}
-	
+
 	/**
 	 * Returns state render layer for a gird world domain with the provided wall map.
 	 * @param map the wall map matrix where 0s indicate it is clear of walls, 1s indicate a full cell wall in that cell, 2s indicate a 1D north wall, 3s indicate a 1D east wall, and 4s indicate a 1D north and east wall.
 	 * @return a grid world domain state render layer
 	 */
 	public static StateRenderLayer getRenderLayer(int [][] map){
-		
+
 		StateRenderLayer r = new StateRenderLayer();
-		
+
 		r.addStatePainter(new MapPainter(map));
 		OOStatePainter oopainter = new OOStatePainter();
-		oopainter.addObjectClassPainter(GridWorldDomain.CLASS_LOCATION, new LocationPainter(map));
-		oopainter.addObjectClassPainter(GridWorldDomain.CLASS_AGENT, new CellPainter(1, Color.gray, map));
+		oopainter.addObjectClassPainter(burlap.domain.singleagent.gridworld.GridWorldDomain.CLASS_LOCATION, new LocationPainter(map));
+		oopainter.addObjectClassPainter(GridWorldDomain.CLASS_AGENT, new CellPainter(2, Color.gray, map));
 		r.addStatePainter(oopainter);
 		
 		return r;
@@ -240,14 +241,22 @@ public class GridWorldVisualizer {
 
 			float rx = (Integer)ob.get(VAR_X)*width;
 			float ry = cHeight - height - (Integer)ob.get(VAR_Y)*height;
-			
+			float rtheta = 90;
+			if (GridWorldState.class.isInstance(s))
+			{
+				rtheta = Integer.parseInt(ob.get(GridWorldDomain.VAR_THETA).toString()) * 90;
+			}
+
 			if(this.shape == 0){
 				g2.fill(new Rectangle2D.Float(rx, ry, width, height));
+			}
+			else if (this.shape == 2){
+				g2.fill(new Arc2D.Float(rx, ry, width, height, rtheta-225f, 90, Arc2D.PIE));
 			}
 			else{
 				g2.fill(new Ellipse2D.Float(rx, ry, width, height));
 			}
-			
+
 		}
 		
 		

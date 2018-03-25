@@ -13,17 +13,11 @@ import burlap.behavior.singleagent.learnfromdemo.mlirl.commonrfs.LinearStateDiff
 import burlap.behavior.singleagent.learnfromdemo.mlirl.differentiableplanners.DifferentiableSparseSampling;
 import burlap.behavior.valuefunction.QProvider;
 import burlap.debugtools.RandomFactory;
-import burlap.domain.singleagent.gridworld.GridWorldDomain;
-import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
-import burlap.domain.singleagent.gridworld.state.GridAgent;
-import burlap.domain.singleagent.gridworld.state.GridLocation;
-import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.GroundedProp;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.shell.visual.VisualExplorer;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
@@ -35,25 +29,24 @@ import java.util.List;
 public class HelloGridWorld {
 
     public Visualizer visualizer;
-    public XYThetaDomain gridWorld;
+    public Tutorial.GridWorldDomain gridWorld;
     public OOSADomain domain;
     public GridLocation goal;
+    public static int GRID_MAX_X = 5;
+    public static int GRID_MAX_Y = 5;
 
     public HelloGridWorld()
     {
-//        gridWorld = new XYThetaDomain(11,11); //11x11 grid world
+//        gridWorld = new Tutorial.GridWorldDomain(11,11); //11x11 grid world
 //        gridWorld.setMapToFourRooms(); //four rooms layout
-//        gridWorld.setProbSucceedTransitionDynamics(0.8); //stochastic transitions, if needed
+//        gridWorld.setDeterministicTransitionDynamics();
 
-        gridWorld = new XYThetaDomain(5,5); //5x5 grid world
-        gridWorld.setMapToParkingLot();
+        gridWorld = new Tutorial.GridWorldDomain(GRID_MAX_X,GRID_MAX_Y);
 
         domain = gridWorld.generateDomain(); //generate the grid world domain
 
-        goal = new GridLocation(10, 0, 2, "GOAL");
-
         //create visualizer and explorer
-        visualizer = XYThetaWorldVisualizer.getVisualizer(gridWorld.getMap());
+        visualizer = GridWorldVisualizer.getVisualizer(gridWorld.getMap());
 
     }
 
@@ -82,19 +75,19 @@ public class HelloGridWorld {
 
         VisualExplorer exp = new VisualExplorer(domain, visualizer, init_state);
 
-        //set control keys to use w-s-a-d
-//        exp.addKeyAction("w", GridWorldDomain.ACTION_NORTH, "");
-//        exp.addKeyAction("s", GridWorldDomain.ACTION_SOUTH, "");
-//        exp.addKeyAction("a", GridWorldDomain.ACTION_WEST, "");
-//        exp.addKeyAction("d", GridWorldDomain.ACTION_EAST, "");
+//        //Set control keys to use w-s-a-d
+//        exp.addKeyAction("w", Tutorial.GridWorldDomain.ACTION_NORTH, "");
+//        exp.addKeyAction("s", Tutorial.GridWorldDomain.ACTION_SOUTH, "");
+//        exp.addKeyAction("a", Tutorial.GridWorldDomain.ACTION_WEST, "");
+//        exp.addKeyAction("d", Tutorial.GridWorldDomain.ACTION_EAST, "");
 
-        //set controls to 6 actions (w,s,q,e,z,x). a,d not allowed
-        exp.addKeyAction("w", XYThetaDomain.ACTION_F, "");
-        exp.addKeyAction("s", XYThetaDomain.ACTION_R, "");
-        exp.addKeyAction("q", XYThetaDomain.ACTION_FL, "");
-        exp.addKeyAction("e", XYThetaDomain.ACTION_FR, "");
-        exp.addKeyAction("z", XYThetaDomain.ACTION_RL, "");
-        exp.addKeyAction("x", XYThetaDomain.ACTION_RR, "");
+        //Set controls to actions (w,s,q,e,z,x). a,d not allowed
+        exp.addKeyAction("w", Tutorial.GridWorldDomain.ACTION_F, "");
+        exp.addKeyAction("s", Tutorial.GridWorldDomain.ACTION_R, "");
+        exp.addKeyAction("q", Tutorial.GridWorldDomain.ACTION_FL, "");
+        exp.addKeyAction("e", Tutorial.GridWorldDomain.ACTION_FR, "");
+        exp.addKeyAction("z", Tutorial.GridWorldDomain.ACTION_RL, "");
+        exp.addKeyAction("x", Tutorial.GridWorldDomain.ACTION_RR, "");
 
         exp.initGUI();
     }
@@ -176,8 +169,8 @@ public class HelloGridWorld {
         GridLocation loc7 = new GridLocation(2, 0, 0, "loc7");
         GridLocation loc8 = new GridLocation(3, 0, 0, "loc8");
 
-        GridWorldState parking_init_state = new XYThetaState(
-                new XYThetaAgent(0, 2, 1), loc0, loc1, goal, loc3, loc4, loc5, loc6, loc7, loc8);
+        GridWorldState parking_init_state = new GridWorldState(
+                new GridAgent(0, 2, 1), loc0, loc1, goal, loc3, loc4, loc5, loc6, loc7, loc8);
 
         //Use the GridWorldState below to use the standard grid world representation
 //        GridWorldState parking_init_state = new GridWorldState(
@@ -228,8 +221,8 @@ public class HelloGridWorld {
         //learned rather than the value function for it.
         ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(
                 allStates,
-                11,
-                11,
+                GRID_MAX_X,
+                GRID_MAX_Y,
                 new RewardValueProjection(rf),
                 new GreedyQPolicy((QProvider) request.getPlanner())
         );

@@ -1,17 +1,15 @@
-package burlap.domain.singleagent.gridworld;
+package Tutorial;
 
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI;
 import burlap.behavior.valuefunction.ValueFunction;
 import burlap.debugtools.RandomFactory;
-import burlap.domain.singleagent.gridworld.state.GridAgent;
-import burlap.domain.singleagent.gridworld.state.GridLocation;
-import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.auxiliary.DomainGenerator;
 import burlap.mdp.auxiliary.common.NullTermination;
-import burlap.mdp.core.action.Action;
 import burlap.mdp.core.StateTransitionProb;
 import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.action.UniversalActionType;
 import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
@@ -20,7 +18,6 @@ import burlap.mdp.core.oo.state.ObjectInstance;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.vardomain.VariableDomain;
 import burlap.mdp.singleagent.SADomain;
-import burlap.mdp.core.action.UniversalActionType;
 import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
@@ -78,6 +75,11 @@ public class GridWorldDomain implements DomainGenerator {
 	public static final String VAR_Y = "y";
 
 	/**
+	 * Constant for theta variable key
+	 */
+	public static final String VAR_THETA = "theta";
+
+	/**
 	 * Constant for location type variable key
 	 */
 	public static final String VAR_TYPE = "type";
@@ -93,28 +95,33 @@ public class GridWorldDomain implements DomainGenerator {
 	 */
 	public static final String CLASS_LOCATION = "location";
 
-	/**
-	 * Constant for the name of the north action
-	 */
-	public static final String ACTION_NORTH = "north";
-	
-	/**
-	 * Constant for the name of the south action
-	 */
-	public static final String ACTION_SOUTH = "south";
-	
-	/**
-	 * Constant for the name of the east action
-	 */
-	public static final String ACTION_EAST = "east";
-	
-	/**
-	 * Constant for the name of the west action
-	 */
-	public static final String ACTION_WEST = "west";
-	
-	
-	
+//	/**
+//	 * Constant for the name of the north action
+//	 */
+//	public static final String ACTION_NORTH = "north";
+//
+//	/**
+//	 * Constant for the name of the south action
+//	 */
+//	public static final String ACTION_SOUTH = "south";
+//
+//	/**
+//	 * Constant for the name of the east action
+//	 */
+//	public static final String ACTION_EAST = "east";
+//
+//	/**
+//	 * Constant for the name of the west action
+//	 */
+//	public static final String ACTION_WEST = "west";
+
+	public static final String ACTION_F = "Forward";
+	public static final String ACTION_R = "Rear";
+	public static final String ACTION_FR = "fwdAndRight";
+	public static final String ACTION_FL = "fwdAndLeft";
+	public static final String ACTION_RR = "revAndRight";
+	public static final String ACTION_RL = "revAndLeft";
+
 	/**
 	 * Constant for the name of the at location propositional function
 	 */
@@ -179,6 +186,11 @@ public class GridWorldDomain implements DomainGenerator {
 
 	protected RewardFunction rf;
 	protected TerminalFunction tf;
+
+	public GridWorldDomain ()
+	{
+
+	}
 	
 	
 	/**
@@ -217,10 +229,10 @@ public class GridWorldDomain implements DomainGenerator {
 	 * Will set the domain to use deterministic action transitions.
 	 */
 	public void setDeterministicTransitionDynamics(){
-		int na = 4;
-		transitionDynamics = new double[na][na];
-		for(int i = 0; i < na; i++){
-			for(int j = 0; j < na; j++){
+		int numActions = 6;
+		transitionDynamics = new double[numActions][numActions];
+		for(int i = 0; i < numActions; i++){
+			for(int j = 0; j < numActions; j++){
 				if(i != j){
 					transitionDynamics[i][j] = 0.;
 				}
@@ -237,11 +249,11 @@ public class GridWorldDomain implements DomainGenerator {
 	 * @param probSucceed probability to move the in intended direction
 	 */
 	public void setProbSucceedTransitionDynamics(double probSucceed){
-		int na = 4;
+		int numActions = 6;
 		double pAlt = (1.-probSucceed)/3.;
-		transitionDynamics = new double[na][na];
-		for(int i = 0; i < na; i++){
-			for(int j = 0; j < na; j++){
+		transitionDynamics = new double[numActions][numActions];
+		for(int i = 0; i < numActions; i++){
+			for(int j = 0; j < numActions; j++){
 				if(i != j){
 					transitionDynamics[i][j] = pAlt;
 				}
@@ -253,8 +265,8 @@ public class GridWorldDomain implements DomainGenerator {
 	}
 	
 	/**
-	 * Will set the movement direction probabilities based on the action chosen. The index (0,1,2,3) indicates the
-	 * direction north,south,east,west, respectively and the matrix is organized by transitionDynamics[selectedDirection][actualDirection].
+	 * Will set the movement direction probabilities based on the action chosen. The index (0,1,2,3,4,5) indicates the
+	 * directions F,R,FL,FR,RL,RR respectively and the matrix is organized by transitionDynamics[selectedDirection][actualDirection].
 	 * For instance, the probability of the agent moving east when selecting north would be specified in the entry transitionDynamics[0][2]
 	 * 
 	 * @param transitionDynamics entries indicate the probability of movement in the given direction (second index) for the given action selected (first index).
@@ -495,6 +507,7 @@ public class GridWorldDomain implements DomainGenerator {
 	}
 
 	public List<PropositionalFunction> generatePfs(){
+		/// TODO: 25/03/2018 Fix the prop functions? They only *display* what's banned, they don't enforce it (I've implemented the enforcement already)
 		List<PropositionalFunction> pfs = Arrays.asList(
 				new AtLocationPF(PF_AT_LOCATION, new String[]{CLASS_AGENT, CLASS_LOCATION}),
 			new WallToPF(PF_WALL_NORTH, new String[]{CLASS_AGENT}, 0),
@@ -530,11 +543,12 @@ public class GridWorldDomain implements DomainGenerator {
 		domain.setModel(model);
 
 		domain.addActionTypes(
-				new UniversalActionType(ACTION_NORTH),
-				new UniversalActionType(ACTION_SOUTH),
-				new UniversalActionType(ACTION_EAST),
-				new UniversalActionType(ACTION_WEST));
-
+				new UniversalActionType(ACTION_F),
+				new UniversalActionType(ACTION_R),
+				new UniversalActionType(ACTION_FL),
+				new UniversalActionType(ACTION_FR),
+				new UniversalActionType(ACTION_RL),
+				new UniversalActionType(ACTION_RR));
 		
 		OODomain.Helper.addPfsToDomain(domain, this.generatePfs());
 		
@@ -548,31 +562,33 @@ public class GridWorldDomain implements DomainGenerator {
 
 
 	/**
-	 * Creates and returns a {@link burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI}
+	 * Creates and returns a {@link ValueFunctionVisualizerGUI}
 	 * object for a grid world. The value of states
 	 * will be represented by colored cells from red (lowest value) to blue (highest value). North-south-east-west
 	 * actions will be rendered with arrows using {@link burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph}
 	 * objects. The GUI will not be launched by default; call the
-	 * {@link burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI#initGUI()}
+	 * {@link ValueFunctionVisualizerGUI#initGUI()}
 	 * on the returned object to start it.
 	 * @param states the states whose value should be rendered.
 	 * @param maxX the maximum value in the x dimension
 	 * @param maxY the maximum value in the y dimension
 	 * @param valueFunction the value Function that can return the state values.
 	 * @param p the policy to render
-	 * @return a gridworld-based {@link burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI} object.
+	 * @return a gridworld-based {@link ValueFunctionVisualizerGUI} object.
 	 */
 	public static ValueFunctionVisualizerGUI getGridWorldValueFunctionVisualization(List <State> states, int maxX, int maxY, ValueFunction valueFunction, Policy p){
 		return ValueFunctionVisualizerGUI.createGridWorldBasedValueFunctionVisualizerGUI(states, valueFunction, p,
 				new OOVariableKey(CLASS_AGENT, VAR_X), new OOVariableKey(CLASS_AGENT, VAR_Y), new VariableDomain(0, maxX), new VariableDomain(0, maxY), 1, 1,
-				ACTION_NORTH, ACTION_SOUTH, ACTION_EAST, ACTION_WEST);
+				ACTION_F, ACTION_R, ACTION_FR, ACTION_FL);
+		/// TODO: 24/03/2018 figure out how to use 4 actions here, when the policy actually gives 6 actions. Maybe don't use the GWValueFcnVisualization at all?
+		/// TODO: 25/03/2018 this will only be an issue when viewing the inferred reward function from IRL
 	}
 
 
 	/**
 	 * Returns the change in x and y position for a given direction number.
-	 * @param i the direction number (0,1,2,3 indicates north,south,east,west, respectively)
-	 * @return the change in direction for x and y; the first index of the returned double is change in x, the second index is change in y.
+	 * @param i the direction number (0,1,2,3,4,5)
+	 * @return the change in direction for x, y, theta
 	 */
 	protected static int [] movementDirectionFromIndex(int i){
 
@@ -580,19 +596,27 @@ public class GridWorldDomain implements DomainGenerator {
 
 		switch (i) {
 			case 0:
-				result = new int[]{0,1};
+				result = new int[]{0,1,0}; //F
 				break;
 
 			case 1:
-				result = new int[]{0,-1};
+				result = new int[]{0,-1,0}; //R
 				break;
 
 			case 2:
-				result = new int[]{1,0};
+				result = new int[]{-1,1,1}; //FL
 				break;
 
 			case 3:
-				result = new int[]{-1,0};
+				result = new int[]{1,1,-1}; //FR
+				break;
+
+			case 4:
+				result = new int[]{-1,-1,-1}; //RL
+				break;
+
+			case 5:
+				result = new int[]{1,-1,1}; //RR
 				break;
 
 			default:
@@ -609,7 +633,7 @@ public class GridWorldDomain implements DomainGenerator {
 		/**
 		 * The map of the world
 		 */
-		int [][] map;
+		protected int [][] map;
 
 
 		/**
@@ -625,6 +649,7 @@ public class GridWorldDomain implements DomainGenerator {
 
 		protected Random rand = RandomFactory.getMapped(0);
 
+		public GridWorldModel() { }
 
 		public GridWorldModel(int[][] map, double[][] transitionDynamics) {
 			this.map = map;
@@ -644,7 +669,7 @@ public class GridWorldDomain implements DomainGenerator {
 				}
 				State ns = s.copy();
 				int [] dcomps = movementDirectionFromIndex(i);
-				ns = move(ns, dcomps[0], dcomps[1]);
+				ns = move(ns, dcomps[0], dcomps[1], dcomps[2]);
 
 				//make sure this direction doesn't actually stay in the same place and replicate another no-op
 				boolean isNew = true;
@@ -686,26 +711,34 @@ public class GridWorldDomain implements DomainGenerator {
 			}
 
 			int [] dcomps = movementDirectionFromIndex(dir);
-			return move(s, dcomps[0], dcomps[1]);
+			return move(s, dcomps[0], dcomps[1], dcomps[2]);
 
 		}
 
 		/**
 		 * Attempts to move the agent into the given position, taking into account walls and blocks
 		 * @param s the current state
-		 * @param xd the attempted new X position of the agent
-		 * @param yd the attempted new Y position of the agent
+		 * @param xd the attempted X displacement in agent's frame (-1, 0, 1)
+		 * @param yd the attempted Y displacement in agent's frame (-1, 0, 1)
+		 * @param thetad the attempted theta displacement in agent's frame (-1 -90deg, 0 0deg, +1 +90deg)
 		 * @return input state s, after modification
 		 */
-		protected State move(State s, int xd, int yd){
+		protected State move(State s, int xd, int yd, int thetad) {
 
-			GridWorldState gws = (GridWorldState)s;
+			GridWorldState gridWorldState = (GridWorldState)s;
 
-			int ax = gws.agent.x;
-			int ay = gws.agent.y;
+			int ax = gridWorldState.agent.x;
+			int ay = gridWorldState.agent.y;
+			int at = gridWorldState.agent.theta;
 
-			int nx = ax+xd;
-			int ny = ay+yd;
+//            System.out.println("Move: Old pose " + gridWorldState.agent.toString());
+
+			GridLocation dvIn = new GridLocation(xd, yd, "differenceVector");
+			GridLocation dvOut = rotateVector(dvIn, at);
+
+			int nx = ax + dvOut.x;
+			int ny = ay + dvOut.y;
+			int nt = (at + thetad + 4) % 4;
 
 			//hit wall, so do not change position
 			if(nx < 0 || nx >= map.length || ny < 0 || ny >= map[0].length || map[nx][ny] == 1 ||
@@ -713,32 +746,69 @@ public class GridWorldDomain implements DomainGenerator {
 					(yd > 0 && (map[ax][ay] == 2 || map[ax][ay] == 4)) || (yd < 0 && (map[nx][ny] == 2 || map[nx][ny] == 4)) ){
 				nx = ax;
 				ny = ay;
+				nt = at;
 			}
 
-			GridAgent nagent = gws.touchAgent();
+			GridAgent nagent = gridWorldState.touchAgent();
 			nagent.x = nx;
 			nagent.y = ny;
+			nagent.theta = nt;
+
+//            System.out.println("Move: New pose " + nagent.toString());
 
 			return s;
 		}
 
 
+
 		protected int actionInd(String name){
-			if(name.equals(ACTION_NORTH)){
+			if(name.equals(ACTION_F)){
 				return 0;
 			}
-			else if(name.equals(ACTION_SOUTH)){
+			else if(name.equals(ACTION_R)){
 				return 1;
 			}
-			else if(name.equals(ACTION_EAST)){
+			else if(name.equals(ACTION_FL)){
 				return 2;
 			}
-			else if(name.equals(ACTION_WEST)){
+			else if(name.equals(ACTION_FR)){
 				return 3;
+			}
+			else if(name.equals(ACTION_RL)){
+				return 4;
+			}
+			else if(name.equals(ACTION_RR)){
+				return 5;
 			}
 			throw new RuntimeException("Unknown action " + name);
 		}
 
+	}
+
+	/**
+	 * Rotate vector
+	 * @param dv the vector (difference vector that you want to rotate)
+	 * @param thetaInit Initial theta of agent. 0=E, 1=N, 2=W, 3=S
+	 * @return final vector
+	 */
+	//TODO: Instead of gridlocation, find a vector2D class for input and output
+	private static GridLocation rotateVector(GridLocation dv, int thetaInit)
+	{
+		int dxIn = dv.x;
+		int dyIn = dv.y;
+		double dTheta = (thetaInit - 1) * Math.PI/2;
+
+		double dxOut = dxIn*Math.cos(dTheta) - dyIn*Math.sin(dTheta);
+		double dyOut = dxIn*Math.sin(dTheta) + dyIn*Math.cos(dTheta);
+
+		if ((Math.abs(Math.round(dxOut) - dxOut) > 0.1) || (Math.abs(Math.round(dyOut) - dyOut) > 0.1))
+		{
+			System.out.print("What?! dxOut " +dxOut+ "or dyOut " +dyOut+ " are not integers!");
+		}
+
+		dv.x = (int)Math.round(dxOut);
+		dv.y = (int)Math.round(dyOut);
+		return dv;
 	}
 
 	
@@ -826,7 +896,7 @@ public class GridWorldDomain implements DomainGenerator {
 			int cx = ax + xdelta;
 			int cy = ay + ydelta;
 			
-			if(cx < 0 || cx >= GridWorldDomain.this.width || cy < 0 || cy >= GridWorldDomain.this.height || GridWorldDomain.this.map[cx][cy] == 1 || 
+			if(cx < 0 || cx >= GridWorldDomain.this.width || cy < 0 || cy >= GridWorldDomain.this.height || GridWorldDomain.this.map[cx][cy] == 1 ||
 					(xdelta > 0 && (GridWorldDomain.this.map[ax][ay] == 3 || GridWorldDomain.this.map[ax][ay] == 4)) || (xdelta < 0 && (GridWorldDomain.this.map[cx][cy] == 3 || GridWorldDomain.this.map[cx][cy] == 4)) ||
 					(ydelta > 0 && (GridWorldDomain.this.map[ax][ay] == 2 || GridWorldDomain.this.map[ax][ay] == 4)) || (ydelta < 0 && (GridWorldDomain.this.map[cx][cy] == 2 || GridWorldDomain.this.map[cx][cy] == 4)) ){
 				return true;
@@ -851,12 +921,12 @@ public class GridWorldDomain implements DomainGenerator {
 	
 		GridWorldDomain gwdg = new GridWorldDomain(11, 11);
 		gwdg.setMapToFourRooms();
-		//gwdg.setProbSucceedTransitionDynamics(0.75);
+		gwdg.setDeterministicTransitionDynamics();
 
 		SADomain d = gwdg.generateDomain();
 
 
-		GridWorldState s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
+		GridWorldState s = new GridWorldState(new GridAgent(0, 0, 0), new GridLocation(10, 10, "loc0"));
 
 		
 		int expMode = 1;
@@ -876,16 +946,25 @@ public class GridWorldDomain implements DomainGenerator {
 			
 		}
 		else if(expMode == 1){
-			
+
 			Visualizer v = GridWorldVisualizer.getVisualizer(gwdg.getMap());
 			VisualExplorer exp = new VisualExplorer(d, v, s);
-			
-			//use w-s-a-d-x
-			exp.addKeyAction("w", ACTION_NORTH, "");
-			exp.addKeyAction("s", ACTION_SOUTH, "");
-			exp.addKeyAction("a", ACTION_WEST, "");
-			exp.addKeyAction("d", ACTION_EAST, "");
-			
+
+			// //	Use w-s-a-d-x
+			//	exp.addKeyAction("w", ACTION_NORTH, "");
+			//	exp.addKeyAction("s", ACTION_SOUTH, "");
+			//	exp.addKeyAction("a", ACTION_WEST, "");
+			//	exp.addKeyAction("d", ACTION_EAST, "");
+
+
+			///Set controls to 6 actions (w,s,q,e,z,x). a,d not allowed
+			exp.addKeyAction("w", Tutorial.GridWorldDomain.ACTION_F, "");
+			exp.addKeyAction("s", Tutorial.GridWorldDomain.ACTION_R, "");
+			exp.addKeyAction("q", Tutorial.GridWorldDomain.ACTION_FL, "");
+			exp.addKeyAction("e", Tutorial.GridWorldDomain.ACTION_FR, "");
+			exp.addKeyAction("z", Tutorial.GridWorldDomain.ACTION_RL, "");
+			exp.addKeyAction("x", Tutorial.GridWorldDomain.ACTION_RR, "");
+
 			exp.initGUI();
 		}
 		

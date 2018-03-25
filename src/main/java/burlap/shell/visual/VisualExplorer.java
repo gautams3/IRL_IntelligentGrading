@@ -1,6 +1,6 @@
 package burlap.shell.visual;
 
-import Tutorial.XYThetaState;
+import Tutorial.GridWorldState;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.GroundedProp;
@@ -513,10 +513,10 @@ public class VisualExplorer extends JFrame implements ShellObserver{
 			}
 		}
 
-		if (XYThetaState.class.isInstance(s))
+		if (GridWorldState.class.isInstance(s))
 		{
 			int theta = Integer.parseInt(s.get("agent:theta").toString()) % 4;
-			String direction;
+			String direction = "?";
 			switch (theta){
 				case 0:
 					direction = "E"; break;
