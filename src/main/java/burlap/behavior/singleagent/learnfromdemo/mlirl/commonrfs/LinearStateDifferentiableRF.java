@@ -6,8 +6,13 @@ import burlap.behavior.functionapproximation.dense.DenseStateFeatures;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.support.DifferentiableRF;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.state.State;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Arrays;
+import java.util.Scanner;
 
 /**
  * A class for defining a linear state {@link burlap.behavior.singleagent.learnfromdemo.mlirl.support.DifferentiableRF}.
@@ -145,6 +150,65 @@ public class LinearStateDifferentiableRF implements DifferentiableRF {
 	@Override
 	public String toString() {
 		return Arrays.toString(this.parameters);
+	}
+
+
+	public String serialize(){
+
+		Yaml yaml = new Yaml();
+		String yamlOut = yaml.dump(this);
+		return yamlOut;
+	}
+
+	public static LinearStateDifferentiableRF parseRF (String RewardFnString){
+
+		Yaml yaml = new Yaml();
+		LinearStateDifferentiableRF ea = (LinearStateDifferentiableRF)yaml.load(RewardFnString);
+		return ea;
+	}
+
+	/**
+	 * Reads an episode that was written to a file and turns into an EpisodeAnalysis object.
+	 * @param path the path to the episode file.
+	 * @return an EpisodeAnalysis object.
+	 */
+	public static LinearStateDifferentiableRF read(String path){
+
+		//read whole file into string first
+		String fcont = null;
+		try{
+			fcont = new Scanner(new File(path)).useDelimiter("\\Z").next();
+		}catch(Exception E){
+			System.out.println(E);
+		}
+
+		return parseRF(fcont);
+	}
+
+	/**
+	 * Writes this episode to a file. If the the directory for the specified file path do not exist, then they will be created.
+	 * If the file extension is not ".episode" will automatically be added. States must be serializable.
+	 * @param path the path to the file in which to write this episode.
+	 */
+	public void write(String path){
+
+		if(!path.endsWith(".rf")){
+			path = path + ".rf";
+		}
+
+		File f = (new File(path)).getParentFile();
+		if(f != null){
+			f.mkdirs();
+		}
+
+		try{
+			String str = this.serialize();
+			BufferedWriter out = new BufferedWriter(new FileWriter(path));
+			out.write(str);
+			out.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
 	}
 
 }

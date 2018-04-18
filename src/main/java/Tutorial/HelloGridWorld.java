@@ -276,6 +276,8 @@ public class HelloGridWorld {
         gui.setBgColor(Color.GRAY);
 
         gui.initGUI();
+
+        rf.write("testRF.rf");
     }
 
 }
