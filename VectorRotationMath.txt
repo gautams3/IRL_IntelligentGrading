@@ -1,0 +1,25 @@
+Press E
+in: [1, 1, -1]
+E(0)	dout: [1, -1, -1]
+N(1)	dout: [1, 1, -1]
+W(2)	you can generalise from below using rotation matrix
+S(3)
+
+
+RotateVector counterclockwise by angle T
+x' = [+cosT -sinT] [x]
+y'   [+sinT +cosT] [y]
+
+e.g.
+headed East (T=-90, relative to North)
+and pressed E (Fwd-Right turn)
+in: dx, dy = 1, 1
+out: dx' = 1.cos-90 - 1.sin-90 = 1
+out: dy' = 1.sin-90 + 1.cos-90 = -1
+
+e.g.
+headed West (T=+90, relative to North)
+and pressed X (Rev-Right turn)
+in: dx, dy = 1, -1
+out: dx' = 1.cos90 - 1.sin90 = -1
+out: dy' = 1.sin90 + 1.cos90 = 1

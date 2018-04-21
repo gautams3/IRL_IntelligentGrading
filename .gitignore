@@ -8,3 +8,6 @@ target
 out
 src/main/java/.DS_Store
 *.DS_Store
+*.xml
+*.episode
+burlap-repo/
