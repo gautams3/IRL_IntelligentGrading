@@ -11,7 +11,9 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -111,6 +113,10 @@ public class LinearStateDifferentiableRF implements DifferentiableRF {
 		return this.parameters[i];
 	}
 
+	public double[] getParameters() {
+		return this.parameters;
+	}
+
 	@Override
 	public void setParameter(int i, double p) {
 		this.parameters[i] = p;
@@ -156,33 +162,8 @@ public class LinearStateDifferentiableRF implements DifferentiableRF {
 	public String serialize(){
 
 		Yaml yaml = new Yaml();
-		String yamlOut = yaml.dump(this);
+		String yamlOut = yaml.dump(this.parameters);
 		return yamlOut;
-	}
-
-	public static LinearStateDifferentiableRF parseRF (String RewardFnString){
-
-		Yaml yaml = new Yaml();
-		LinearStateDifferentiableRF ea = (LinearStateDifferentiableRF)yaml.load(RewardFnString);
-		return ea;
-	}
-
-	/**
-	 * Reads an episode that was written to a file and turns into an EpisodeAnalysis object.
-	 * @param path the path to the episode file.
-	 * @return an EpisodeAnalysis object.
-	 */
-	public static LinearStateDifferentiableRF read(String path){
-
-		//read whole file into string first
-		String fcont = null;
-		try{
-			fcont = new Scanner(new File(path)).useDelimiter("\\Z").next();
-		}catch(Exception E){
-			System.out.println(E);
-		}
-
-		return parseRF(fcont);
 	}
 
 	/**

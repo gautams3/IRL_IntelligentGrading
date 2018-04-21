@@ -28,10 +28,15 @@ import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.shell.visual.VisualExplorer;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
 import burlap.visualizer.Visualizer;
+import org.yaml.snakeyaml.Yaml;
 
+import javax.sound.sampled.Line;
 import java.awt.*;
+import java.awt.geom.Arc2D;
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Scanner;
 
 import static Tutorial.GridWorldDomain.*;
 
@@ -64,10 +69,12 @@ public class HelloGridWorld {
 
         HelloGridWorld myGridWorld = new HelloGridWorld();
 
-        myGridWorld.launchExplorer();
+//        myGridWorld.launchExplorer();
 //        myGridWorld.launchSavedEpisodeSequenceVis("user_tries");
-//        myGridWorld.runIRL("irl_demos", "user_tries");
 
+        String rewardFunctionPath = "IRLRewardFunction.rf";
+        myGridWorld.runIRL("irl_demos", rewardFunctionPath);
+        myGridWorld.testUser("user_tries", rewardFunctionPath);
     }
 
     /**
@@ -140,6 +147,8 @@ public class HelloGridWorld {
                 fv[aL] = 1.;
             }
 
+            fv[this.numLocations-1] = 1.;
+
             return fv;
         }
 
@@ -192,15 +201,16 @@ public class HelloGridWorld {
     /**
      * Runs MLIRL on the trajectories stored in the pathToEpisodes directory and then visualizes the learned reward function.
      */
-    public void runIRL(String pathToEpisodes, String pathToUserTries)
+    public void runIRL(String pathToEpisodes, String pathToStoreRewardFunction)
     {
         /** SETUP AND RUN IRL */
         //create reward function features to use
-        LocationFeatures features = new LocationFeatures(this.domain, 5);
+        int numFeatures = 4;
+        LocationFeatures features = new LocationFeatures(this.domain, numFeatures+1); //last feature is for road
 
         //create a reward function that is linear with respect to those features and has small random
         //parameter values to start
-        LinearStateDifferentiableRF rf = new LinearStateDifferentiableRF(features, 5);
+        LinearStateDifferentiableRF rf = new LinearStateDifferentiableRF(features, numFeatures+1);
         for(int i = 0; i < rf.numParameters(); i++){
             rf.setParameter(i, RandomFactory.getMapped(0).nextDouble()*0.2 - 0.1);
         }
@@ -224,30 +234,21 @@ public class HelloGridWorld {
         MLIRL irl = new MLIRL(request, 0.1, 0.1, 10); /// TODO: 25/03/2018 set small negative reward for road here somewhere
         irl.performIRL();
 
+        /** ADD SMALL COST TO EACH REWARD PARAM*/
+        double[] rfParams = rf.getParameters();
+        double min = Double.MAX_VALUE;
+        for (double param : rfParams)
+        {
+            min = Math.min(min, param);
+        }
+        min = -Math.abs(min)/100; //small cost added to each state's reward
+        System.out.println("RF: cost added to each state: " + min);
+        rf.setParameter(numFeatures, min);
+        if (!pathToStoreRewardFunction.isEmpty()) {
+            rf.write(pathToStoreRewardFunction);
+        }
         //get all states in the domain so we can visualize the learned reward function for them
         List<State> allStates = StateReachability.getReachableStates(basicState(), this.domain, new SimpleHashableStateFactory());
-
-        /**
-         * SCORING CODE
-         * */
-        /// TODO: 25/03/2018 Store the reward function to a file (using YAML?)
-        /// TODO: 25/03/2018 Move to other function that reads reward function from file, user tries from file, and gives you a score
-        System.out.println("\n\nNow applying learned policy by agent to test paths tried by users from folder " + pathToUserTries);
-
-        double reward, totalReward;
-        DecimalFormat df = new DecimalFormat("#0.000");
-        if (pathToUserTries != null) {
-            List<Episode> userTries = Episode.readEpisodes(pathToUserTries);
-            for (Episode ep : userTries) {
-                totalReward = 0; //reset
-                for (State s : ep.stateSequence) {
-                    reward = rf.reward(null, null, s);
-                    totalReward += reward; /// TODO: 25/03/2018 Use gamma here
-                    System.out.println(s.get("agent:x") +", "+ s.get("agent:y")+", "+ GridWorldState.getCardinalDirection((GridWorldState)s) +": "+ "\t" + df.format(reward));
-                }
-                System.out.println("Score for this try: " + df.format(totalReward));
-            }
-        }
 
         /** VISUALIZE */
         //get a standard grid world value function visualizer, but give it StateRewardFunctionValue which returns the
@@ -276,8 +277,56 @@ public class HelloGridWorld {
         gui.setBgColor(Color.GRAY);
 
         gui.initGUI();
-
-        rf.write("testRF.rf");
     }
+
+    public void testUser(String pathToUserTries, String pathToRewardFunction)
+    {
+        /**
+         * SCORING CODE
+         * */
+        System.out.println("\n\nApplying learned policy by agent to test \npaths tried by users from folder " + pathToUserTries);
+
+        LinearStateDifferentiableRF newRf = parseRF(pathToRewardFunction);
+        double reward, totalReward;
+        DecimalFormat df = new DecimalFormat("#0.000");
+        if (pathToUserTries != null) {
+            List<Episode> userTries = Episode.readEpisodes(pathToUserTries);
+            for (Episode ep : userTries) {
+                System.out.println("\n***New Episode***");
+                totalReward = 0; //reset
+                for (State s : ep.stateSequence) {
+                    reward = newRf.reward(null, null, s);
+                    totalReward += reward; /// TODO: 25/03/2018 Use gamma here
+                    System.out.println(s.get("agent:x") +", "+ s.get("agent:y")+", "+ GridWorldState.getCardinalDirection((GridWorldState)s) +": "+ "\t" + df.format(reward));
+                }
+                System.out.println("Score for this try: " + df.format(totalReward));
+            }
+        }
+    }
+
+    public LinearStateDifferentiableRF parseRF (String RewardFnString){
+
+        //read whole file into string first
+        String fcont = null;
+        try{
+            fcont = new Scanner(new File(RewardFnString)).useDelimiter("\\Z").next();
+        }catch(Exception E){
+            System.out.println(E);
+        }
+
+        Yaml yaml = new Yaml();
+        List<Double> rfParams = (List<Double>) yaml.load(fcont);
+
+        int dim = rfParams.size();
+        LocationFeatures features = new LocationFeatures(this.domain, dim);
+        LinearStateDifferentiableRF rf = new LinearStateDifferentiableRF(features, dim);
+        for (int i = 0; i < dim; i++)
+        {
+            //TODO: Build function that can set all params at once
+            rf.setParameter(i, rfParams.get(i));
+        }
+        return rf;
+    }
+
 
 }
