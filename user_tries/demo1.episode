@@ -1,0 +1,32 @@
+!!burlap.behavior.singleagent.Episode
+actionSequence:
+- &id001 !!burlap.mdp.core.action.SimpleAction {name: Forward}
+- &id002 !!burlap.mdp.core.action.SimpleAction {name: fwdAndRight}
+- *id001
+- *id002
+rewardSequence: [-1.0, -1.0, -1.0, -1.0]
+stateSequence:
+- !!Tutorial.GridWorldState
+  agent: {name: agent, theta: 1, x: 0, y: 2}
+  locations: &id003
+  - {name: loc0, type: 1, x: 1, y: 3}
+  - {name: loc1, type: 1, x: 2, y: 3}
+  - {name: GOAL, type: 2, x: 3, y: 3}
+  - {name: loc3, type: 0, x: 1, y: 2}
+  - {name: loc4, type: 0, x: 2, y: 2}
+  - {name: loc5, type: 0, x: 3, y: 2}
+  - {name: loc6, type: 0, x: 1, y: 0}
+  - {name: loc7, type: 0, x: 2, y: 0}
+  - {name: loc8, type: 0, x: 3, y: 0}
+- !!Tutorial.GridWorldState
+  agent: {name: agent, theta: 1, x: 0, y: 3}
+  locations: *id003
+- !!Tutorial.GridWorldState
+  agent: {name: agent, theta: 0, x: 1, y: 4}
+  locations: *id003
+- !!Tutorial.GridWorldState
+  agent: {name: agent, theta: 0, x: 2, y: 4}
+  locations: *id003
+- !!Tutorial.GridWorldState
+  agent: {name: agent, theta: 3, x: 3, y: 3}
+  locations: *id003

@@ -30,9 +30,7 @@ import burlap.statehashing.simple.SimpleHashableStateFactory;
 import burlap.visualizer.Visualizer;
 import org.yaml.snakeyaml.Yaml;
 
-import javax.sound.sampled.Line;
 import java.awt.*;
-import java.awt.geom.Arc2D;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -41,7 +39,7 @@ import java.util.Scanner;
 import static Tutorial.GridWorldDomain.*;
 
 
-public class HelloGridWorld {
+public class IRLParkingLotExample {
 
     public Visualizer visualizer;
     public Tutorial.GridWorldDomain gridWorld;
@@ -50,12 +48,8 @@ public class HelloGridWorld {
     public static int GRID_MAX_X = 5;
     public static int GRID_MAX_Y = 5;
 
-    public HelloGridWorld()
+    public IRLParkingLotExample()
     {
-//        gridWorld = new Tutorial.GridWorldDomain(11,11); //11x11 grid world
-//        gridWorld.setMapToFourRooms(); //four rooms layout
-//        gridWorld.setDeterministicTransitionDynamics();
-
         gridWorld = new Tutorial.GridWorldDomain(GRID_MAX_X,GRID_MAX_Y);
 
         domain = gridWorld.generateDomain(); //generate the grid world domain
@@ -66,15 +60,39 @@ public class HelloGridWorld {
     }
 
     public static void main(String[] args) {
-
-        HelloGridWorld myGridWorld = new HelloGridWorld();
-
-//        myGridWorld.launchExplorer();
-//        myGridWorld.launchSavedEpisodeSequenceVis("user_tries");
+        IRLParkingLotExample myGridWorld = new IRLParkingLotExample();
+        GridWorldRunOptions chosen = GridWorldRunOptions.ExploreAndRecord;
+        String ExpertDemonstrationFolder = "irl_demos";
+        String UserTrialsFolder = "user_tries";
+        String folderToPlaybackFrom = UserTrialsFolder;
 
         String rewardFunctionPath = "IRLRewardFunction.rf";
-        myGridWorld.runIRL("irl_demos", rewardFunctionPath);
-        myGridWorld.testUser("user_tries", rewardFunctionPath);
+
+        if (chosen == GridWorldRunOptions.ExploreAndRecord)
+        {
+            myGridWorld.launchExplorer();
+        }
+        else if (chosen == GridWorldRunOptions.Playback)
+        {
+            myGridWorld.launchSavedEpisodeSequenceVis(folderToPlaybackFrom);
+        }
+        else if (chosen == GridWorldRunOptions.RunIRL)
+        {
+            myGridWorld.runIRL(ExpertDemonstrationFolder, rewardFunctionPath);
+        }
+        else if (chosen == GridWorldRunOptions.TestUser)
+        {
+            myGridWorld.testUser(UserTrialsFolder, rewardFunctionPath);
+        }
+
+    }
+
+    private enum GridWorldRunOptions
+    {
+        ExploreAndRecord,
+        Playback,
+        RunIRL,
+        TestUser,
     }
 
     /**
